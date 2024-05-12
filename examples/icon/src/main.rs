@@ -1,10 +1,5 @@
 use cosmic::{
-    app::{Core, Settings},
-    desktop::IconSource,
-    executor,
-    iced::{Alignment, Event, Length, Subscription},
-    widget::{button, column, icon::Handle, text},
-    Command, Element,
+    app::{Core, Settings}, desktop::IconSource, executor, iced::{Alignment, Event, Length, Subscription}, widget::{button, column, icon::Handle, text, Column, Container, Space}, Command, Element
 };
 use cosmic_time::{
     self, anim, chain, container, id, once_cell::sync::Lazy, Duration, Instant, Timeline,
@@ -16,11 +11,16 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(cosmic::app::run::<Counter>(Settings::default(), ())?)
 }
 
+
+const TAILLE_ICON: u16 = 30;
+
+const TAILLE_CONTAINER: u16 = TAILLE_ICON + 10;
+
+const DELTA: u16 = 5;
+
 struct Counter {
     core: Core,
-    value: i32,
     timeline: Timeline,
-    enable: bool,
     icon: IconSource,
 }
 
@@ -54,32 +54,10 @@ impl cosmic::Application for Counter {
         Self,
         cosmic::iced::Command<cosmic::app::Message<Self::Message>>,
     ) {
-        let mut timeline = Timeline::new();
-        let animation = chain![
-            CONTAINER,
-            container(Duration::ZERO).width(0.).height(100.),
-            container(Duration::from_secs(2)).width(200.).height(100.),
-            container(Duration::from_secs(2))
-                .width(200.)
-                .height(300.)
-                .padding([0, 0, 0, 0]),
-            container(Duration::from_secs(2))
-                .width(700.)
-                .height(300.)
-                .padding([0, 0, 0, 500]),
-            container(Duration::from_secs(2))
-                .width(150.)
-                .height(150.)
-                .padding([0, 0, 0, 0]),
-        ];
-
-        //timeline.set_chain(animation).start();
 
         let state = Self {
             core,
-            value: 0,
-            timeline,
-            enable: true,
+            timeline: Timeline::new(),
             icon: IconSource::Name("firefox".to_string()),
         };
 
@@ -87,10 +65,34 @@ impl cosmic::Application for Counter {
     }
 
     fn update(&mut self, message: Self::Message) -> Command<cosmic::app::Message<Message>> {
+
+
         match message {
             Message::Tick(now) => self.timeline.now(now),
-            Message::Pressed => {}
-            Message::Released => {}
+            Message::Pressed => {
+                println!("Pressed");
+
+                let final_size = TAILLE_CONTAINER - DELTA;
+                
+                let animation = chain![
+                    CONTAINER,
+                    container(Duration::ZERO).width(TAILLE_CONTAINER).height(TAILLE_CONTAINER),
+                    container(Duration::from_millis(100)).width(final_size).height(final_size),
+                ];
+
+                self.timeline.set_chain(animation).start();
+            }
+            Message::Released => {
+                println!("Released");
+
+                
+                let animation = chain![
+                    CONTAINER,
+                    container(Duration::from_millis(100)).width(TAILLE_CONTAINER).height(TAILLE_CONTAINER),
+                ];
+
+                self.timeline.set_chain(animation).start();
+            }
             Message::DoNothing => {}
             /*
             Message::ToggleBluetooth(chain, enabled) => {
@@ -106,15 +108,27 @@ impl cosmic::Application for Counter {
     }
 
     fn view(&self) -> Element<Message> {
-        let icon = self.icon.as_cosmic_icon().size(30);
+        let icon = self.icon.as_cosmic_icon().size(TAILLE_ICON);
 
-        let button = cosmic::widget::button::button(icon).on_press(Message::DoNothing);
+        let button = cosmic::widget::button::button(icon);//.on_press(Message::DoNothing);
 
         let button = cosmic::widget::mouse_area(button)
             .on_press(Message::Pressed)
             .on_release(Message::Released);
 
-        anim!(CONTAINER, &self.timeline, button).into()
+        let e = anim!(CONTAINER, &self.timeline, button);
+        
+        let content = Column::new()
+            .push(e)
+            .push(Space::with_height(100))
+            .push(self.icon.as_cosmic_icon().size(TAILLE_ICON));
+
+        Container::new(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .center_x()
+            .center_y()
+            .into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -127,5 +141,3 @@ impl cosmic::Application for Counter {
             .map(|(_, instant)| Message::Tick(instant))
     }
 }
-
-static BLUETOOTH_ENABLED: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
