@@ -1,8 +1,9 @@
 use cosmic::{
     app::{Core, Settings},
+    desktop::IconSource,
     executor,
     iced::{Alignment, Event, Length, Subscription},
-    widget::{button, column, text},
+    widget::{button, column, icon::Handle, text},
     Command, Element,
 };
 use cosmic_time::{
@@ -20,14 +21,15 @@ struct Counter {
     value: i32,
     timeline: Timeline,
     enable: bool,
+    icon: IconSource,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    IncrementPressed,
-    DecrementPressed,
+    Pressed,
+    Released,
+    DoNothing,
     Tick(Instant),
-    ToggleBluetooth(chain::Toggler, bool),
 }
 
 impl cosmic::Application for Counter {
@@ -71,16 +73,48 @@ impl cosmic::Application for Counter {
                 .padding([0, 0, 0, 0]),
         ];
 
-        timeline.set_chain(animation).start();
+        //timeline.set_chain(animation).start();
 
         let state = Self {
             core,
             value: 0,
             timeline,
             enable: true,
+            icon: IconSource::Name("firefox".to_string()),
         };
 
         (state, Command::none())
+    }
+
+    fn update(&mut self, message: Self::Message) -> Command<cosmic::app::Message<Message>> {
+        match message {
+            Message::Tick(now) => self.timeline.now(now),
+            Message::Pressed => {}
+            Message::Released => {}
+            Message::DoNothing => {}
+            /*
+            Message::ToggleBluetooth(chain, enabled) => {
+                if self.enable == enabled {
+                    return Command::none();
+                }
+                self.timeline.set_chain(chain).start();
+                self.enable = enabled;
+            }
+             */
+        }
+        Command::none()
+    }
+
+    fn view(&self) -> Element<Message> {
+        let icon = self.icon.as_cosmic_icon().size(30);
+
+        let button = cosmic::widget::button::button(icon).on_press(Message::DoNothing);
+
+        let button = cosmic::widget::mouse_area(button)
+            .on_press(Message::Pressed)
+            .on_release(Message::Released);
+
+        anim!(CONTAINER, &self.timeline, button).into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -91,57 +125,6 @@ impl cosmic::Application for Counter {
         self.timeline
             .as_subscription()
             .map(|(_, instant)| Message::Tick(instant))
-    }
-
-    fn update(&mut self, message: Self::Message) -> Command<cosmic::app::Message<Message>> {
-        match message {
-            Message::IncrementPressed => {
-                self.value += 1;
-            }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
-            Message::Tick(now) => self.timeline.now(now),
-
-            Message::ToggleBluetooth(chain, enabled) => {
-                if self.enable == enabled {
-                    return Command::none();
-                }
-                self.timeline.set_chain(chain).start();
-                self.enable = enabled;
-            }
-        }
-        Command::none()
-    }
-
-    fn view(&self) -> Element<Message> {
-        let column = column()
-            .push(
-                button("Increment")
-                    .on_press(Message::IncrementPressed)
-                    .width(Length::Fill),
-            )
-            .push(text(self.value.to_string()).size(50).height(Length::Fill))
-            .push(
-                button("Decrement")
-                    .on_press(Message::DecrementPressed)
-                    .width(Length::Fill),
-            )
-            .padding(20)
-            .align_items(Alignment::Center);
-
-        /*
-        anim!(
-            //toggler
-            BLUETOOTH_ENABLED,
-            &self.timeline,
-            "bluetooth".to_string(),
-            self.enable,
-            Message::ToggleBluetooth,
-        ).into()
-         */
-
-        anim!(CONTAINER, &self.timeline, column).into()
     }
 }
 

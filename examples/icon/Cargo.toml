@@ -18,5 +18,6 @@ default-features = false
 features = [
     "winit",
     "smol",
-    "wgpu"
+    "wgpu",
+    "desktop"
 ]
