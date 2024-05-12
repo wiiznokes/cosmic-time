@@ -1,7 +1,9 @@
+
 use cosmic::{
     app::{Core, Settings}, executor, iced::{Alignment, Event, Length, Subscription}, widget::{button, column, text}, Command, Element
 };
 use cosmic_time::{self, anim, chain, id, once_cell::sync::Lazy, reexports::iced, Duration, Instant, Timeline, container};
+
 
 static CONTAINER: Lazy<id::Container> = Lazy::new(id::Container::unique);
 
@@ -13,13 +15,15 @@ struct Counter {
     core: Core,
     value: i32,
     timeline: Timeline,
+    enable: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum Message {
     IncrementPressed,
     DecrementPressed,
     Tick(Instant),
+    ToggleBluetooth(chain::Toggler, bool),
 }
 
 impl cosmic::Application for Counter {
@@ -69,6 +73,7 @@ impl cosmic::Application for Counter {
             core,
             value: 0,
             timeline,
+            enable: true,
         };
 
         (state, Command::none())
@@ -91,6 +96,14 @@ impl cosmic::Application for Counter {
                 self.value -= 1;
             }
             Message::Tick(now) => self.timeline.now(now),
+
+            Message::ToggleBluetooth(chain, enabled) => {
+                if self.enable == enabled {
+                    return Command::none();
+                }
+                self.timeline.set_chain(chain).start();
+                self.enable = enabled;
+            }
         }
         Command::none()
     }
@@ -111,7 +124,20 @@ impl cosmic::Application for Counter {
             )
             .padding(20)
             .align_items(Alignment::Center);
+        
+            anim!(
+                //toggler
+                BLUETOOTH_ENABLED,
+                &self.timeline,
+                "bluetooth".to_string(),
+                self.enable,
+                Message::ToggleBluetooth,
+            ).into()
 
-        anim!(CONTAINER, &self.timeline, column).into()
+        /* 
+        anim!(CONTAINER, &self.timeline, column!(column)).into()
+        */
     }
 }
+
+static BLUETOOTH_ENABLED: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
