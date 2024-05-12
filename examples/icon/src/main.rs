@@ -1,9 +1,13 @@
-
 use cosmic::{
-    app::{Core, Settings}, executor, iced::{Alignment, Event, Length, Subscription}, widget::{button, column, text}, Command, Element
+    app::{Core, Settings},
+    executor,
+    iced::{Alignment, Event, Length, Subscription},
+    widget::{button, column, text},
+    Command, Element,
 };
-use cosmic_time::{self, anim, chain, id, once_cell::sync::Lazy, reexports::iced, Duration, Instant, Timeline, container};
-
+use cosmic_time::{
+    self, anim, chain, container, id, once_cell::sync::Lazy, Duration, Instant, Timeline,
+};
 
 static CONTAINER: Lazy<id::Container> = Lazy::new(id::Container::unique);
 
@@ -43,7 +47,7 @@ impl cosmic::Application for Counter {
 
     fn init(
         core: cosmic::app::Core,
-        flags: Self::Flags,
+        _flags: Self::Flags,
     ) -> (
         Self,
         cosmic::iced::Command<cosmic::app::Message<Self::Message>>,
@@ -84,10 +88,12 @@ impl cosmic::Application for Counter {
         // at what timeline you have built and decides for you how often your
         // application should redraw for you! When the animation is done idle
         // or finished, cosmic-time will keep your applicaiton idle!
-        self.timeline.as_subscription().map(|(_, instant)| Message::Tick(instant))
+        self.timeline
+            .as_subscription()
+            .map(|(_, instant)| Message::Tick(instant))
     }
 
-    fn update(&mut self, message: Self::Message) ->  Command<cosmic::app::Message<Message>> {
+    fn update(&mut self, message: Self::Message) -> Command<cosmic::app::Message<Message>> {
         match message {
             Message::IncrementPressed => {
                 self.value += 1;
@@ -107,7 +113,6 @@ impl cosmic::Application for Counter {
         }
         Command::none()
     }
-    
 
     fn view(&self) -> Element<Message> {
         let column = column()
@@ -124,19 +129,19 @@ impl cosmic::Application for Counter {
             )
             .padding(20)
             .align_items(Alignment::Center);
-        
-            anim!(
-                //toggler
-                BLUETOOTH_ENABLED,
-                &self.timeline,
-                "bluetooth".to_string(),
-                self.enable,
-                Message::ToggleBluetooth,
-            ).into()
 
-        /* 
-        anim!(CONTAINER, &self.timeline, column!(column)).into()
-        */
+        /*
+        anim!(
+            //toggler
+            BLUETOOTH_ENABLED,
+            &self.timeline,
+            "bluetooth".to_string(),
+            self.enable,
+            Message::ToggleBluetooth,
+        ).into()
+         */
+
+        anim!(CONTAINER, &self.timeline, column).into()
     }
 }
 
